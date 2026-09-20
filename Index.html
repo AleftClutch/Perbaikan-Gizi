@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5F7FB">
+<title>Kalkulator Gizi Harian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F7FB; --card:#FFFFFF; --ink:#2F3A4A; --muted:#66748A; --line:#E4E9F2;
+  --kcal:#F4B99C; --kcal-l:#FFEFE7;
+  --prot:#9CC6E8; --prot-l:#E8F3FB;
+  --carb:#EED77F; --carb-l:#FFF8DA;
+  --fat:#93D1AE;  --fat-l:#E7F5ED;
+  --accent:#BDB2EC; --accent-soft:#E9E5F9; --focus:#7B6BD4;
+  --over:#F7CBD5; --over-l:#FDEEF1; --over-ink:#8C2F47;
+  --font:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--font);padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:22px 16px 0}
+
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+h1{margin:0;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
+.date{margin:3px 0 0;color:var(--muted);font-size:14px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px}
+h2{margin:0 0 14px;font-size:16px;font-weight:800}
+
+/* target */
+details.card>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:16px;min-height:28px}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .2s}
+details.card[open]>summary::after{transform:rotate(-135deg) translateY(-2px)}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.tfield{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.tfield .in{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:0 12px}
+.tfield .in:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tfield input{border:0;outline:0;background:transparent;font:800 18px var(--font);color:var(--ink);width:100%;min-width:0;min-height:46px}
+.tfield .u{font-weight:600;font-size:14px}
+
+/* sisa */
+.row{--c:var(--kcal);--l:var(--kcal-l);margin-bottom:16px}
+.row:last-child{margin-bottom:0}
+.row.prot{--c:var(--prot);--l:var(--prot-l)}
+.row.carb{--c:var(--carb);--l:var(--carb-l)}
+.row.fat{--c:var(--fat);--l:var(--fat-l)}
+.row-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.lbl{font-weight:600;color:var(--muted);font-size:14px}
+.val{font-weight:800;font-size:20px}
+.val small{font-size:13px;font-weight:600;color:var(--muted)}
+.row.kcal .val{font-size:36px;line-height:1.1;letter-spacing:-.02em}
+.track{height:12px;border-radius:999px;background:var(--l);overflow:hidden}
+.fill{height:100%;border-radius:999px;background:var(--c);transition:width .45s ease}
+.row.over .val,.row.over .val small{color:var(--over-ink)}
+.row.over .track{background:var(--over)}
+
+/* makanan */
+.foods{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px}
+.tile{position:relative}
+.food{width:100%;height:100%;min-height:118px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:2px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.food:active{background:var(--accent-soft)}
+.fname{font-weight:800;font-size:15px;line-height:1.25}
+.fper{color:var(--muted);font-size:12.5px}
+.fnum{font-weight:800;font-size:15px;margin-top:auto;padding-top:6px}
+.fmac{display:flex;gap:8px;color:var(--muted);font-size:12.5px;font-weight:600}
+.badge{position:absolute;top:-7px;right:-3px;background:var(--accent);color:var(--ink);font-weight:800;font-size:12.5px;border-radius:999px;padding:2px 10px}
+.del{position:absolute;right:6px;bottom:4px;border:0;background:transparent;color:var(--muted);font:600 12px var(--font);text-decoration:underline;padding:8px;cursor:pointer}
+.food.add{border-style:dashed;border-color:#C9C1EE;background:transparent;align-items:center;justify-content:center;text-align:center;gap:4px}
+.food.add .plus{font-size:26px;line-height:1;font-weight:600;color:var(--focus)}
+
+/* bar bawah */
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:5}
+.bar-in{max-width:560px;margin:0 auto}
+.sum{margin:0 0 8px;font-size:13.5px;color:var(--muted);min-height:2.7em}
+.sum b{color:var(--ink);font-weight:800}
+.acts{display:flex;gap:10px}
+.btn{font:800 16px var(--font);min-height:48px;border-radius:999px;border:0;padding:0 22px;cursor:pointer;color:var(--ink);touch-action:manipulation}
+.btn.primary{background:var(--accent);flex:1}
+.btn.soft{background:var(--accent-soft)}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.small{min-height:40px;padding:0 16px;font-size:14px}
+.btn.oops{background:var(--over-l);color:var(--over-ink)}
+.bar .acts .btn{padding:0 16px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* layar selamat */
+.overlay{position:fixed;inset:0;background:rgba(47,58,74,.35);display:flex;align-items:flex-end;justify-content:center;padding:16px;z-index:10}
+.overlay[hidden]{display:none}
+.sheet{background:#fff;border-radius:28px;padding:28px 22px 22px;width:100%;max-width:440px;text-align:center;animation:pop .35s ease-out;max-height:92vh;overflow:auto}
+@keyframes pop{from{transform:translateY(16px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.mark{width:68px;height:68px;border-radius:50%;background:var(--fat-l);display:grid;place-items:center;margin:0 auto 14px}
+.sheet h2{font-size:22px;line-height:1.25;margin:0 0 6px}
+.sheet p{margin:0;color:var(--muted)}
+.sur-box{background:var(--over-l);border-radius:16px;padding:14px 16px;margin:18px 0;text-align:left}
+.sur-box .t{font-weight:800;color:var(--over-ink);margin-bottom:6px}
+.sur{list-style:none;margin:0;padding:0}
+.sur li{display:flex;justify-content:space-between;padding:4px 0;color:var(--over-ink)}
+.sur-none{background:var(--fat-l);border-radius:16px;padding:14px 16px;margin:18px 0;color:var(--ink)}
+.sheet .acts .btn{flex:1;padding:0 12px}
+
+/* dialog tambah makanan */
+dialog{border:0;border-radius:24px;padding:22px 20px 20px;width:min(92vw,420px);color:var(--ink);font-family:var(--font)}
+dialog::backdrop{background:rgba(47,58,74,.35)}
+dialog h2{margin-bottom:6px}
+.hint{margin:0 0 14px;color:var(--muted);font-size:14px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px}
+.f input{font:600 16px var(--font);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:0 12px;min-height:46px;background:var(--bg);width:100%}
+.f input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+dialog .acts{margin-top:6px}
+
+@media (min-width:600px){.overlay{align-items:center}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}.fill{transition:none}details.card>summary::after{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Gizi hari ini</h1>
+      <p class="date" id="date"></p>
+    </div>
+    <button class="btn ghost small" id="reset" type="button">Reset</button>
+  </header>
+
+  <details class="card" open>
+    <summary>Target harian</summary>
+    <div class="tgrid">
+      <label class="tfield">Kalori<span class="in"><input id="t-kcal" type="number" inputmode="decimal" min="0" step="any"><span class="u">kcal</span></span></label>
+      <label class="tfield">Protein<span class="in"><input id="t-prot" type="number" inputmode="decimal" min="0" step="any"><span class="u">g</span></span></label>
+      <label class="tfield">Karbo<span class="in"><input id="t-carb" type="number" inputmode="decimal" min="0" step="any"><span class="u">g</span></span></label>
+      <label class="tfield">Lemak baik<span class="in"><input id="t-fat" type="number" inputmode="decimal" min="0" step="any"><span class="u">g</span></span></label>
+    </div>
+  </details>
+
+  <section class="card" aria-labelledby="h-sisa">
+    <h2 id="h-sisa">Sisa kebutuhan</h2>
+    <div id="remain" aria-live="polite"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-makanan">
+    <h2 id="h-makanan">Makanan</h2>
+    <div class="foods" id="foods"></div>
+  </section>
+</div>
+
+<div class="bar">
+  <div class="bar-in">
+    <p class="sum" id="sum"></p>
+    <div class="acts">
+      <button class="btn soft" id="undo" type="button" aria-label="Batalkan tekanan terakhir">Batalkan</button>
+      <button class="btn primary" id="calc" type="button">Hitung</button>
+      <button class="btn oops" id="oops" type="button" aria-label="Upss, batalkan hitungan terakhir">Upss</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="done" hidden role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+  <div class="sheet">
+    <div class="mark" aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#3E9A6B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </div>
+    <h2 id="doneTitle">Selamat, kebutuhan gizi hari ini terpenuhi!</h2>
+    <p>Semua target kalori, protein, karbo, dan lemak sudah tercapai.</p>
+    <div id="surplus"></div>
+    <div class="acts">
+      <button class="btn soft" id="doneBack" type="button">Kembali</button>
+      <button class="btn primary" id="doneNew" type="button">Mulai baru</button>
+    </div>
+  </div>
+</div>
+
+<dialog id="addDlg">
+  <form id="addForm" novalidate>
+    <h2>Tambah makanan</h2>
+    <p class="hint">Isi nilai gizi untuk satu kali tekan tombol.</p>
+    <label class="f">Nama makanan<input id="a-name" type="text" maxlength="40" required autocomplete="off"></label>
+    <div class="grid2">
+      <label class="f">Jumlah tiap tekan<input id="a-amount" type="number" inputmode="decimal" min="0.1" step="any" value="1" required></label>
+      <label class="f">Satuan<input id="a-unit" type="text" maxlength="12" value="porsi" required autocomplete="off"></label>
+    </div>
+    <div class="grid2">
+      <label class="f">Kalori (kcal)<input id="a-kcal" type="number" inputmode="decimal" min="0" step="any" placeholder="0" required></label>
+      <label class="f">Protein (g)<input id="a-prot" type="number" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+      <label class="f">Karbo (g)<input id="a-carb" type="number" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+      <label class="f">Lemak (g)<input id="a-fat" type="number" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+    </div>
+    <div class="acts">
+      <button class="btn ghost" id="addCancel" type="button">Batal</button>
+      <button class="btn primary" type="submit">Tambah</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+  /* ====== DATA AWAL ======
+     Nilai gizi di bawah adalah perkiraan umum per satu kali tekan.
+     Ubah angkanya di sini kalau punya data yang lebih pas.
+     Untuk menambah makanan tetap, salin satu baris lalu ganti isinya. */
+  var NUTS=[
+    {k:'kcal',label:'Kalori',unit:'kcal'},
+    {k:'prot',label:'Protein',unit:'g'},
+    {k:'carb',label:'Karbo',unit:'g'},
+    {k:'fat', label:'Lemak baik',unit:'g'}
+  ];
+  var state={
+    target:{kcal:2400,prot:100,carb:330,fat:75},
+    consumed:{kcal:0,prot:0,carb:0,fat:0},
+    foods:[
+      {id:'telur',name:'Telur rebus',amount:1,unit:'butir',kcal:78,prot:6.3,carb:0.6,fat:5.3},
+      {id:'ayam',name:'Paha atas ayam goreng',amount:1,unit:'potong',kcal:280,prot:20,carb:6,fat:19},
+      {id:'nasi',name:'Nasi putih',amount:50,unit:'g',kcal:65,prot:1.4,carb:14,fat:0.2}
+    ],
+    history:[],
+    snapshots:[]
+  };
+
+  /* ====== UTIL ====== */
+  var $=function(s){return document.querySelector(s)};
+  var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+  var num=function(v){var x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0};
+  var round1=function(x){var r=Math.round(x*10)/10;return r===0?0:r};
+  var nf=new Intl.NumberFormat('id-ID',{maximumFractionDigits:1});
+  var fmt=function(x){return nf.format(round1(x)).replace('-','\u2212')};
+
+  var el={
+    remain:$('#remain'), foods:$('#foods'), sum:$('#sum'),
+    undo:$('#undo'), calc:$('#calc'), oops:$('#oops'),
+    done:$('#done'), surplus:$('#surplus'),
+    dlg:$('#addDlg'), form:$('#addForm')
+  };
+
+  function counts(){
+    var m={};
+    state.history.forEach(function(id){m[id]=(m[id]||0)+1});
+    return m;
+  }
+  function remaining(k){return round1(num(state.target[k])-state.consumed[k])}
+
+  /* ====== RENDER ====== */
+  function renderRemaining(){
+    el.remain.innerHTML=NUTS.map(function(n){
+      var t=num(state.target[n.k]);
+      var rem=remaining(n.k);
+      var pct=t>0?Math.max(0,Math.min(100,rem/t*100)):0;
+      var over=rem<0;
+      var value=over?('lebih '+fmt(-rem)):fmt(rem);
+      return '<div class="row '+n.k+(over?' over':'')+'">'+
+        '<div class="row-top"><span class="lbl">'+n.label+'</span>'+
+        '<span class="val">'+value+' <small>'+n.unit+'</small></span></div>'+
+        '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div></div>';
+    }).join('');
+  }
+
+  function renderFoods(){
+    var c=counts();
+    var html=state.foods.map(function(f){
+      var n=c[f.id]||0;
+      return '<div class="tile">'+
+        '<button class="food" type="button" data-add="'+f.id+'" aria-label="Tambah '+esc(f.name)+', '+fmt(f.amount)+' '+esc(f.unit)+'">'+
+          '<span class="fname">'+esc(f.name)+'</span>'+
+          '<span class="fper">tiap tekan '+fmt(f.amount)+' '+esc(f.unit)+'</span>'+
+          '<span class="fnum">'+fmt(f.kcal)+' kcal</span>'+
+          '<span class="fmac"><span>P '+fmt(f.prot)+'</span><span>K '+fmt(f.carb)+'</span><span>L '+fmt(f.fat)+'</span></span>'+
+        '</button>'+
+        (n?'<span class="badge">'+fmt(n*f.amount)+' '+esc(f.unit)+'</span>':'')+
+        (f.custom?'<button class="del" type="button" data-del="'+f.id+'" aria-label="Hapus '+esc(f.name)+'">hapus</button>':'')+
+      '</div>';
+    }).join('');
+    html+='<div class="tile"><button class="food add" type="button" id="openAdd">'+
+      '<span class="plus" aria-hidden="true">+</span><span class="fname">Makanan lain</span>'+
+      '<span class="fper">isi nilai gizi sendiri</span></button></div>';
+    el.foods.innerHTML=html;
+  }
+
+  function renderBasket(){
+    var c=counts(), tot={kcal:0,prot:0,carb:0,fat:0}, parts=[];
+    state.foods.forEach(function(f){
+      var n=c[f.id]||0; if(!n) return;
+      NUTS.forEach(function(x){tot[x.k]+=f[x.k]*n});
+      parts.push(esc(f.name)+' <b>'+fmt(n*f.amount)+' '+esc(f.unit)+'</b>');
+    });
+    if(!parts.length){
+      el.sum.textContent='Keranjang kosong. Tekan makanan untuk menambahkan.';
+    }else{
+      el.sum.innerHTML=parts.join(', ')+'<br>Akan dikurangi: <b>'+fmt(tot.kcal)+' kcal</b>, protein '+fmt(tot.prot)+' g, karbo '+fmt(tot.carb)+' g, lemak '+fmt(tot.fat)+' g';
+    }
+    el.undo.disabled=el.calc.disabled=!state.history.length;
+    el.oops.disabled=!state.snapshots.length;
+  }
+
+  function render(){renderRemaining();renderFoods();renderBasket()}
+
+  /* ====== AKSI ====== */
+  function addTap(id){state.history.push(id);renderFoods();renderBasket()}
+
+  function undo(){state.history.pop();renderFoods();renderBasket()}
+
+  function calculate(){
+    if(!state.history.length) return;
+    state.snapshots.push({
+      consumed:{kcal:state.consumed.kcal,prot:state.consumed.prot,carb:state.consumed.carb,fat:state.consumed.fat},
+      history:state.history.slice()
+    });
+    var c=counts();
+    state.foods.forEach(function(f){
+      var n=c[f.id]||0; if(!n) return;
+      NUTS.forEach(function(x){state.consumed[x.k]+=f[x.k]*n});
+    });
+    state.history=[];
+    render();
+    var allDone=NUTS.every(function(n){return remaining(n.k)<=0});
+    if(allDone) showDone();
+  }
+
+  function showDone(){
+    var over=NUTS.filter(function(n){return remaining(n.k)<0});
+    if(over.length){
+      el.surplus.innerHTML='<div class="sur-box"><div class="t">Kelebihan hari ini</div><ul class="sur">'+
+        over.map(function(n){return '<li><span>'+n.label+'</span><b>+'+fmt(-remaining(n.k))+' '+n.unit+'</b></li>'}).join('')+
+        '</ul></div>';
+    }else{
+      el.surplus.innerHTML='<div class="sur-none">Tidak ada kelebihan. Semuanya pas.</div>';
+    }
+    el.done.hidden=false;
+    $('#doneBack').focus();
+  }
+  function hideDone(){el.done.hidden=true}
+
+  function oops(){
+    var s=state.snapshots.pop();
+    if(!s) return;
+    state.consumed=s.consumed;
+    state.history=s.history;
+    hideDone();
+    render();
+  }
+
+  function resetAll(){
+    state.consumed={kcal:0,prot:0,carb:0,fat:0};
+    state.history=[];
+    state.snapshots=[];
+    render();
+  }
+
+  /* ====== EVENT ====== */
+  el.foods.addEventListener('click',function(e){
+    var add=e.target.closest('[data-add]');
+    if(add){addTap(add.getAttribute('data-add'));return}
+    var del=e.target.closest('[data-del]');
+    if(del){
+      var id=del.getAttribute('data-del');
+      state.foods=state.foods.filter(function(f){return f.id!==id});
+      state.history=state.history.filter(function(h){return h!==id});
+      renderFoods();renderBasket();return;
+    }
+    if(e.target.closest('#openAdd')){
+      el.form.reset();
+      $('#a-amount').value=1; $('#a-unit').value='porsi';
+      el.dlg.showModal();
+      $('#a-name').focus();
+    }
+  });
+
+  el.undo.addEventListener('click',undo);
+  el.calc.addEventListener('click',calculate);
+  el.oops.addEventListener('click',oops);
+  $('#reset').addEventListener('click',function(){
+    if(confirm('Reset sisa gizi ke target awal?')) resetAll();
+  });
+  $('#doneBack').addEventListener('click',hideDone);
+  $('#doneNew').addEventListener('click',function(){hideDone();resetAll();window.scrollTo(0,0)});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!el.done.hidden)hideDone()});
+
+  ['kcal','prot','carb','fat'].forEach(function(k){
+    var input=$('#t-'+k);
+    input.value=state.target[k];
+    input.addEventListener('input',function(){
+      state.target[k]=num(input.value);
+      renderRemaining();
+    });
+  });
+
+  $('#addCancel').addEventListener('click',function(){el.dlg.close()});
+  el.form.addEventListener('submit',function(e){
+    e.preventDefault();
+    if(!el.form.checkValidity()){el.form.reportValidity();return}
+    var name=$('#a-name').value.trim();
+    if(!name) return;
+    state.foods.push({
+      id:'c'+Date.now(),
+      custom:true,
+      name:name,
+      amount:num($('#a-amount').value)||1,
+      unit:$('#a-unit').value.trim()||'porsi',
+      kcal:num($('#a-kcal').value),
+      prot:num($('#a-prot').value),
+      carb:num($('#a-carb').value),
+      fat:num($('#a-fat').value)
+    });
+    el.dlg.close();
+    renderFoods();
+  });
+
+  /* ====== MULAI ====== */
+  $('#date').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'});
+  render();
+})();
+</script>
+</body>
+</html>
